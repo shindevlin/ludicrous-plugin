@@ -3,6 +3,7 @@
 # Sends a structured Warp notification when Claude completes a task
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/build-payload.sh"
 
 # Read hook input from stdin
 INPUT=$(cat)
@@ -13,18 +14,10 @@ if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
     exit 0
 fi
 
-# Extract metadata from the hook input
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)
-TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null)
-CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)
-PROJECT=""
-if [ -n "$CWD" ]; then
-    PROJECT=$(basename "$CWD")
-fi
-
 # Extract the last user prompt and assistant response from the transcript.
 # Small delay to allow Claude Code to flush the current turn to the transcript file.
 # The Stop hook fires before the transcript is fully written.
+TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null)
 sleep 0.3
 QUERY=""
 RESPONSE=""
@@ -54,16 +47,9 @@ if [ -n "$TRANSCRIPT_PATH" ] && [ -f "$TRANSCRIPT_PATH" ]; then
     fi
 fi
 
-# Build structured JSON payload
-BODY=$(jq -nc \
-    --arg agent "claude" \
-    --arg event "stop" \
-    --arg session_id "$SESSION_ID" \
-    --arg cwd "$CWD" \
-    --arg project "$PROJECT" \
+BODY=$(build_payload "$INPUT" "stop" \
     --arg query "$QUERY" \
     --arg response "$RESPONSE" \
-    --arg transcript_path "$TRANSCRIPT_PATH" \
-    '{v:1, agent:$agent, event:$event, session_id:$session_id, cwd:$cwd, project:$project, query:$query, response:$response, transcript_path:$transcript_path}')
+    --arg transcript_path "$TRANSCRIPT_PATH")
 
 "$SCRIPT_DIR/warp-notify.sh" "warp://cli-agent" "$BODY"

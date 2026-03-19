@@ -3,29 +3,17 @@
 # Sends a structured Warp notification when Claude has been idle
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/build-payload.sh"
 
 # Read hook input from stdin
 INPUT=$(cat)
 
-# Extract metadata from the hook input
+# Extract notification-specific fields
 NOTIF_TYPE=$(echo "$INPUT" | jq -r '.notification_type // "unknown"' 2>/dev/null)
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)
 MSG=$(echo "$INPUT" | jq -r '.message // "Input needed"' 2>/dev/null)
 [ -z "$MSG" ] && MSG="Input needed"
-CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)
-PROJECT=""
-if [ -n "$CWD" ]; then
-    PROJECT=$(basename "$CWD")
-fi
 
-# Build structured JSON payload
-BODY=$(jq -nc \
-    --arg agent "claude" \
-    --arg event "$NOTIF_TYPE" \
-    --arg session_id "$SESSION_ID" \
-    --arg cwd "$CWD" \
-    --arg project "$PROJECT" \
-    --arg summary "$MSG" \
-    '{v:1, agent:$agent, event:$event, session_id:$session_id, cwd:$cwd, project:$project, summary:$summary}')
+BODY=$(build_payload "$INPUT" "$NOTIF_TYPE" \
+    --arg summary "$MSG")
 
 "$SCRIPT_DIR/warp-notify.sh" "warp://cli-agent" "$BODY"
