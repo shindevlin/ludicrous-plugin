@@ -142,6 +142,40 @@ PLUGIN_CURRENT_PROTOCOL_VERSION=1
 # Clean up
 unset WARP_CLI_AGENT_PROTOCOL_VERSION
 
+# --- Routing tests ---
+# These test the hook scripts as subprocesses to verify routing behavior.
+# We override /dev/tty writes since they'd fail in CI.
+
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)"
+
+echo ""
+echo "=== Routing ==="
+
+echo ""
+echo "--- SessionStart routing ---"
+
+# Legacy Warp (TERM_PROGRAM=WarpTerminal, no protocol version)
+OUTPUT=$(TERM_PROGRAM=WarpTerminal bash "$HOOK_DIR/on-session-start.sh" < /dev/null 2>/dev/null)
+SYS_MSG=$(echo "$OUTPUT" | jq -r '.systemMessage // empty' 2>/dev/null)
+assert_eq "legacy Warp shows active message" \
+    "🔔 Warp plugin active. You'll receive native Warp notifications when tasks complete or input is needed." \
+    "$SYS_MSG"
+
+# Not Warp (neither env var set)
+OUTPUT=$(TERM_PROGRAM=other bash "$HOOK_DIR/on-session-start.sh" < /dev/null 2>/dev/null)
+SYS_MSG=$(echo "$OUTPUT" | jq -r '.systemMessage // empty' 2>/dev/null)
+assert_eq "non-Warp shows install message" \
+    "ℹ️ Warp plugin installed but you're not running in Warp terminal. Install Warp (https://warp.dev) to get native notifications when Claude completes tasks or needs input." \
+    "$SYS_MSG"
+
+echo ""
+echo "--- Modern-only hooks exit silently without protocol version ---"
+
+for HOOK in on-permission-request.sh on-prompt-submit.sh on-post-tool-use.sh; do
+    echo '{}' | bash "$HOOK_DIR/$HOOK" 2>/dev/null
+    assert_eq "$HOOK exits 0 without protocol version" "0" "$?"
+done
+
 # --- Summary ---
 
 echo ""

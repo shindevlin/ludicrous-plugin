@@ -3,6 +3,13 @@
 # Sends a structured Warp notification when Claude has been idle
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Legacy fallback for old Warp versions
+if [ -z "$WARP_CLI_AGENT_PROTOCOL_VERSION" ]; then
+    [ "$TERM_PROGRAM" = "WarpTerminal" ] && exec "$SCRIPT_DIR/legacy/on-notification.sh"
+    exit 0
+fi
+
 source "$SCRIPT_DIR/build-payload.sh"
 
 # Read hook input from stdin

@@ -3,6 +3,12 @@
 # Sends a structured Warp notification when Claude needs permission to run a tool
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# No legacy equivalent for this hook
+if [ -z "$WARP_CLI_AGENT_PROTOCOL_VERSION" ]; then
+    exit 0
+fi
+
 source "$SCRIPT_DIR/build-payload.sh"
 
 # Read hook input from stdin

@@ -2,6 +2,13 @@
 # Hook script for Claude Code SessionStart event
 # Shows welcome message, Warp detection status, and emits plugin version
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Legacy fallback for old Warp versions
+if [ -z "$WARP_CLI_AGENT_PROTOCOL_VERSION" ]; then
+    exec "$SCRIPT_DIR/legacy/on-session-start.sh"
+fi
+
 if ! command -v jq &>/dev/null; then
     cat << 'EOF'
 {
@@ -10,17 +17,6 @@ if ! command -v jq &>/dev/null; then
 EOF
     exit 0
 fi
-
-if [ -z "$WARP_CLI_AGENT_PROTOCOL_VERSION" ]; then
-    cat << 'EOF'
-{
-  "systemMessage": "⚠️ Please update Warp to get agent notifications — your terminal does not declare cli-agent protocol support"
-}
-EOF
-    exit 0
-fi
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/build-payload.sh"
 
 # Read hook input from stdin

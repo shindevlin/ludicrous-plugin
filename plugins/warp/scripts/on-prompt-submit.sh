@@ -4,6 +4,12 @@
 # transitioning the session status from idle/blocked back to running.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# No legacy equivalent for this hook
+if [ -z "$WARP_CLI_AGENT_PROTOCOL_VERSION" ]; then
+    exit 0
+fi
+
 source "$SCRIPT_DIR/build-payload.sh"
 
 # Read hook input from stdin
