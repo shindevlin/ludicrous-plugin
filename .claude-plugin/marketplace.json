@@ -1,18 +1,18 @@
 {
-  "name": "claude-code-warp",
-  "description": "Official Warp terminal integrations for Claude Code",
+  "name": "ludicrous-plugin",
+  "description": "Ludicrous Terminal integrations for Claude Code",
   "owner": {
-    "name": "Warp",
-    "url": "https://warp.dev"
+    "name": "Shin Devlin",
+    "url": "https://github.com/shindevlin"
   },
   "plugins": [
     {
-      "name": "warp",
-      "description": "Native Warp notifications when Claude completes tasks or needs input",
+      "name": "ludicrous",
+      "description": "Native Ludicrous Terminal notifications when Claude completes tasks or needs input",
       "source": "./plugins/warp",
       "version": "2.0.0",
       "category": "productivity",
-      "tags": ["notifications", "terminal", "warp"]
+      "tags": ["notifications", "terminal", "ludicrous"]
     }
   ]
 }
